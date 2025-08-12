@@ -1,0 +1,132 @@
+import tkinter as tk
+from tkinter import filedialog
+from PIL import Image, ImageTk
+import vlc
+import os
+import threading
+import time
+import platform
+
+class VideoApp:
+    def __init__(self, root, video_paths, image_paths, runtext):
+        self.root = root
+        self.video_paths = video_paths
+        self.image_paths = image_paths
+        self.runtext = runtext
+        self.video_index = 0
+        self.image_index = 0
+        self.text_pos = 0
+
+        self.root.title("Display Multimedia")
+        self.root.attributes("-fullscreen", True)
+        self.root.configure(bg="black")
+        self.root.bind("<Escape>", lambda e: self.root.destroy())
+
+        # LAYOUT
+        self.main_frame = tk.Frame(self.root, bg="black")
+        self.main_frame.pack(expand=True, fill="both")
+
+        self.left_frame = tk.Frame(self.main_frame, bg="black")
+        self.left_frame.pack(side="left", expand=True, fill="both")
+
+        self.right_frame = tk.Frame(self.main_frame, width=400, bg="black")
+        self.right_frame.pack(side="right", fill="y")
+
+        self.bottom_frame = tk.Frame(self.root, height=60, bg="black")
+        self.bottom_frame.pack(side="bottom", fill="x")
+
+        # VIDEO
+        self.instance = vlc.Instance()
+        self.player = self.instance.media_player_new()
+        self.video_panel = tk.Canvas(self.left_frame, bg="black", highlightthickness=0)
+        self.video_panel.pack(expand=True, fill="both")
+
+        self.root.update()
+        widget_id = self.video_panel.winfo_id()
+        system = platform.system()
+        if system == "Windows":
+            self.player.set_hwnd(widget_id)
+        elif system == "Linux":
+            self.player.set_xwindow(widget_id)
+        elif system == "Darwin":
+            self.player.set_nsobject(widget_id)
+
+        # GAMBAR
+        self.image_label = tk.Label(self.right_frame, bg="black")
+        self.image_label.pack(expand=True, fill="both")
+
+        # TEXT BERJALAN
+        self.text_var = tk.StringVar()
+        self.label_text = tk.Label(
+            self.bottom_frame,
+            textvariable=self.text_var,
+            fg="white",
+            bg="black",
+            font=("Helvetica", 28, "bold"),
+            anchor="w"
+        )
+        self.label_text.pack(fill="x", padx=20)
+
+        # Mulai
+        self.scroll_text()
+        self.loop_images()
+        self.play_video()
+
+    def scroll_text(self):
+        text = self.runtext
+        self.text_pos = (self.text_pos + 1) % len(text)
+        display = text[self.text_pos:] + text[:self.text_pos]
+        self.text_var.set(display)
+        self.root.after(100, self.scroll_text)
+
+    def loop_images(self):
+        if not self.image_paths:
+            return
+        path = self.image_paths[self.image_index]
+        try:
+            img = Image.open(path)
+            img = img.resize((400, 600), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.image_label.configure(image=photo)
+            self.image_label.image = photo
+        except Exception as e:
+            print("Gagal menampilkan gambar:", e)
+        self.image_index = (self.image_index + 1) % len(self.image_paths)
+        self.root.after(5000, self.loop_images)
+
+    def play_video(self):
+        if not self.video_paths:
+            return
+        path = self.video_paths[self.video_index]
+        media = self.instance.media_new(path)
+        self.player.set_media(media)
+        self.player.play()
+
+        def check_end():
+            while True:
+                state = self.player.get_state()
+                if state == vlc.State.Ended:
+                    self.video_index = (self.video_index + 1) % len(self.video_paths)
+                    self.play_video()
+                    break
+                time.sleep(1)
+
+        threading.Thread(target=check_end, daemon=True).start()
+
+
+def pilih_file():
+    video = filedialog.askopenfilenames(title="Pilih video", filetypes=[("Video", "*.mp4 *.avi *.mkv")])
+    gambar = filedialog.askopenfilenames(title="Pilih gambar", filetypes=[("Gambar", "*.jpg *.png *.jpeg")])
+    return list(video), list(gambar)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    videos, images = pilih_file()
+
+    if not videos or not images:
+        print("File tidak lengkap. Harap pilih minimal satu video dan satu gambar.")
+        root.destroy()
+    else:
+        teks = "    DIRGAHAYU REPUBLIK INDONESIA KE-80 ! DARI PT. SSI - MERDEKA!    " * 5
+        app = VideoApp(root, videos, images, teks)
+        root.mainloop()
