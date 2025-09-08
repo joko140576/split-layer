@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Display Multimedia</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    /* TOPBAR JAM & TANGGAL */
+    .topbar {
+      height: 50px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 2px solid white;
+      font-family: "Courier New", monospace;
+    }
+
+    .branding {
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .clock {
+      color: #0f0;
+      font-size: 26px;
+      font-weight: bold;
+      text-shadow: 0 0 8px #0f0, 0 0 12px #0f0;
+    }
+
+    .container {
+      display: flex;
+      height: calc(100vh - 150px);
+      border: 2px solid white;
+    }
+
+    .left {
+      flex: 1;
+      background: black;
+      border-right: 2px solid white;
+    }
+
+    .left video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* agar video full tanpa kepotong */
+      background: black;
+      display: block;
+    }
+
+    .right {
+      width: 400px;
+      background: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-left: 2px solid white;
+    }
+
+    .right img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .bottom {
+      height: 60px;
+      background: black;
+      color: white;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      white-space: nowrap;
+      position: relative;
+      border-top: 2px solid white;
+      border-left: 2px solid white;
+      border-right: 2px solid white;
+    }
+
+    .scroll-text {
+      position: absolute;
+      white-space: nowrap;
+      animation: scroll-left 20s linear infinite;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    @keyframes scroll-left {
+      from { transform: translateX(100%); }
+      to { transform: translateX(-100%); }
+    }
+
+    .controls {
+      height: 40px;
+      background: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      border: 2px solid white;
+    }
+
+    .controls button {
+      padding: 6px 14px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #444;
+      color: white;
+    }
+
+    .controls button:hover {
+      background: #666;
+    }
+  </style>
+</head>
+<body>
+  <!-- JAM & BRANDING -->
+  <div class="topbar">
+    <div class="branding">Present by DKM & HCC</div>
+    <div class="clock" id="clock"></div>
+  </div>
+
+  <div class="container">
+    <!-- VIDEO -->
+    <div class="left">
+      <video id="videoPlayer" autoplay playsinline muted>
+        <source id="videoSource" src="" type="video/mp4">
+        Browser kamu tidak mendukung video tag.
+      </video>
+    </div>
+
+    <!-- GAMBAR -->
+    <div class="right">
+      <img id="slideshow" src="" alt="slideshow">
+    </div>
+  </div>
+
+  <!-- TEXT BERJALAN -->
+  <div class="bottom">
+    <div class="scroll-text" id="runningText">
+      Ayo insan-insan PT SSI , bekerja dengan prinsip Budaya Perusahaan SIAP = Solid - Integritas - Adaptif - Profesional  &nbsp;&nbsp;
+    </div>
+  </div>
+
+  <!-- KONTROL -->
+  <div class="controls">
+    <button id="playPause">Pause</button>
+    <button id="muteBtn">Mute</button>
+    <button id="nextVideo">Next Video</button>
+  </div>
+
+  <script>
+    // ----------------- VIDEO -----------------
+    const videoFiles = ["video1.mp4", "video2.mp4", "video3.mp4"];
+    let videoIndex = 0;
+    const videoPlayer = document.getElementById("videoPlayer");
+    const videoSource = document.getElementById("videoSource");
+
+    function playVideo(index) {
+      videoSource.src = videoFiles[index];
+      videoPlayer.load();
+      videoPlayer.play().catch(err => console.error("Autoplay error:", err));
+    }
+
+    videoPlayer.addEventListener("ended", () => {
+      videoIndex = (videoIndex + 1) % videoFiles.length;
+      playVideo(videoIndex);
+    });
+
+    playVideo(videoIndex);
+
+    // ----------------- SLIDESHOW GAMBAR -----------------
+    const imageFiles = ["gambar1.png", "gambar2.png", "gambar3.png"];
+    let imgIndex = 0;
+    const slideshow = document.getElementById("slideshow");
+
+    function showImage() {
+      slideshow.src = imageFiles[imgIndex];
+      imgIndex = (imgIndex + 1) % imageFiles.length;
+    }
+
+    showImage();
+    setInterval(showImage, 5000);
+
+    // ----------------- TEXT BERJALAN -----------------
+    const runningText = document.getElementById("runningText");
+    runningText.innerHTML = runningText.innerHTML.repeat(2);
+
+    // ----------------- JAM & TANGGAL -----------------
+    function updateClock() {
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const dateStr = now.toLocaleDateString('id-ID', options);
+      const timeStr = now.toLocaleTimeString('id-ID');
+      document.getElementById("clock").textContent = dateStr + " | " + timeStr;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ----------------- KONTROL -----------------
+    const playPauseBtn = document.getElementById("playPause");
+    const muteBtn = document.getElementById("muteBtn");
+    const nextBtn = document.getElementById("nextVideo");
+
+    playPauseBtn.addEventListener("click", () => {
+      if (videoPlayer.paused) {
+        videoPlayer.play();
+        playPauseBtn.textContent = "Pause";
+      } else {
+        videoPlayer.pause();
+        playPauseBtn.textContent = "Play";
+      }
+    });
+
+    muteBtn.addEventListener("click", () => {
+      videoPlayer.muted = !videoPlayer.muted;
+      muteBtn.textContent = videoPlayer.muted ? "Unmute" : "Mute";
+    });
+
+    nextBtn.addEventListener("click", () => {
+      videoIndex = (videoIndex + 1) % videoFiles.length;
+      playVideo(videoIndex);
+    });
+  </script>
+</body>
+</html>
